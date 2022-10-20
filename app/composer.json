@@ -1,0 +1,5 @@
+{
+    "require": {
+        "amphp/beanstalk": "^0.3.2"
+    }
+}

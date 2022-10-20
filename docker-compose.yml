@@ -1,0 +1,62 @@
+version: '3.8'
+services:
+  redis_rdb:
+    build: Docker/Redis_rdb
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - redis_rdb_data:/data
+      - ./Docker/Redis_rdb/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      l10:
+    ports:
+      - "6312:6379"
+  redis_aof:
+    build: Docker/Redis_aof
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - redis_aof_data:/data
+      - ./Docker/Redis_aof/redis.conf:/usr/local/etc/redis/redis.conf
+    networks:
+      l10:
+    ports:
+    - "6313:6379"
+  beanstalkd:
+    image: schickling/beanstalkd
+    volumes:
+      - beanstalkd_data:/var/lib/beanstalkd
+    networks:
+      l10:
+    ports:
+    - "11300:11300"
+  nginx_l10:
+    image:          nginx:1.15
+    working_dir:    /var/www/app
+    ports:
+    - 1934:80
+    volumes:
+    - ./app:/var/www/app
+    - ./Docker/Nginx/vhost.local.conf:/etc/nginx/conf.d/l10.conf
+    - ./Docker/Nginx/default.conf:/etc/nginx/conf.d/default.conf
+
+    networks:
+      l10:
+    depends_on:
+    - php_l10
+  php_l10:
+    build: Docker/PHP
+    working_dir: /var/www/app
+    volumes:
+      - ./app:/var/www/app
+    networks:
+      l10:
+    links:
+      - redis_rdb
+    
+volumes:
+  redis_rdb_data:
+  redis_aof_data:
+  beanstalkd_data:
+  
+networks:
+  l10:
+    driver: 'bridge'
